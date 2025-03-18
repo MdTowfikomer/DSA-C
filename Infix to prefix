@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <string.h>
+#define MAX 100
+
+// global declaration 
+char stack[MAX], queue[MAX];
+int stackTop = -1, queueRare = 0, queueFront = 0;
+// queueRare is used to insert the expression, and queueFront is used to delete the expression
+
+// checking the precedence of the operator
+int precedence (char c) {
+    if (c == '+' || c == '-') {
+        return 1;
+    }
+    if (c == '*' || c == '/') {
+        return 2;
+    }
+    if (c == '^') {
+        return 3;
+    }
+    return 0;  // Return 0 for non-operators (not required but helps avoid unhandled cases)
+}
+
+// reversing the expression
+void reverse(char *exp) {
+    int st = 0, end = strlen(exp) - 1; 
+    while (st < end) {
+        char temp = exp[st];
+        exp[st] = exp[end];
+        exp[end] = temp;
+        st++;
+        end--;
+    }
+}
+
+int isOperand(char ch) {
+    return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9'));
+}
+
+int isOperator(char ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^');
+}
+
+int checkExpression(char token) {
+    if (isOperand(token)) 
+        return 1;
+    if (isOperator(token)) 
+        return 2;
+    return 0;  // If it's neither operand nor operator
+}
+
+void infixToPrefix(char *exp, char *result) {
+    // Step-1: Reverse the expression
+    reverse(exp);
+
+    // Step-2: Iterate through the expression
+    for (int i = 0; i < strlen(exp); i++) {
+        char token = exp[i];
+
+        // Check if the token is an operand, enqueue it
+        if (checkExpression(token) == 1) {
+            queue[queueRare] = token;
+            queueRare++;  // Increment after assignment
+        }
+        // If token is '(', push to stack
+        else if (token == '(') {
+            stack[++stackTop] = token;
+        }
+        // If token is ')', pop from stack until '(' is found
+        else if (token == ')') {
+            while (stackTop != -1 && stack[stackTop] != '(') {
+                queue[queueRare] = stack[stackTop];
+                queueRare++;  // Increment after assignment
+                stackTop--;
+            }
+            stackTop--;  // Pop the '(' from the stack
+        } 
+        // If the token is an operator, check precedence
+        else if (isOperator(token)) {
+            while (stackTop != -1 && precedence(token) <= precedence(stack[stackTop])) {
+                queue[queueRare] = stack[stackTop];
+                queueRare++;  // Increment after assignment
+                stackTop--;
+            }
+            stack[++stackTop] = token;  // Push the operator onto the stack
+        }
+    }
+
+    // Step-3: Pop all remaining operators from the stack and enqueue
+    while (stackTop != -1) {
+        queue[queueRare] = stack[stackTop];
+        queueRare++;  // Increment after assignment
+        stackTop--;
+    }
+
+    // Step-4: Reverse the queue to get the final prefix expression
+    queue[queueRare] = '\0';  // NULL-terminate the string
+    reverse(queue);
+    strcpy(result, queue);  // Copy the result to the output string
+}
+
+int main() {
+    char exp[MAX], result[MAX];
+    printf("Enter infix expression: ");
+    scanf("%s", exp);
+
+    infixToPrefix(exp, result);  // Convert infix to prefix
+
+    printf("Prefix expression: %s\n", result);  // Print the result
+    return 0;
+}
